@@ -9,7 +9,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Webjobs.Extensions.Eventsto
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Webjobs.Extensions.Eventstore.Sample", "src\Webjobs.Extensions.Eventstore.Sample\Webjobs.Extensions.Eventstore.Sample.csproj", "{3EFD8E52-842F-4701-8BE2-14431ED73491}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventsEmiter", "EventsEmiter\EventsEmiter.csproj", "{2B52F34C-2B0C-469F-844C-C59FC68BF7F1}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventsEmiter", "src\EventsEmiter\EventsEmiter.csproj", "{2B52F34C-2B0C-469F-844C-C59FC68BF7F1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
