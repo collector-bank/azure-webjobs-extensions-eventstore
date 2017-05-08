@@ -35,14 +35,15 @@ namespace Webjobs.Extensions.Eventstore.Sample
                     Username = ConfigurationManager.AppSettings["EventStoreAdminUser"],
                     Password = ConfigurationManager.AppSettings["EventStoreAdminPassword"],
                     LiveProcessingReachedHandler = container.GetInstance<ILiveProcessingReached>(),
+                    BatchSize = 100,
+                    TimeOutInMilliSeconds = 500,
                     LastPosition = new Position(0,0)
                 });
             }
 
             var jobActivator = new SimpleInjectorJobActivator(container);
             config.JobActivator = jobActivator;
-
-            var host = new JobHost();
+            var host = new JobHost(config);
             host.RunAndBlock();
         }
 

@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 
 namespace Webjobs.Extensions.Eventstore.Sample
 {
@@ -6,7 +7,7 @@ namespace Webjobs.Extensions.Eventstore.Sample
     {
         public void Handle()
         {
-            Trace.TraceInformation("Catchup handler called, we are now processing live messages.");
+            Console.WriteLine("Catchup handler called, we are now processing live messages.");
         }
     }
 }

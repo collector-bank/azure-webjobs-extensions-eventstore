@@ -1,4 +1,6 @@
-﻿using System.Text;
+﻿using System;
+using System.Diagnostics;
+using System.Text;
 using EventStore.ClientAPI;
 using Newtonsoft.Json;
 
@@ -10,6 +12,7 @@ namespace Webjobs.Extensions.Eventstore.Sample
         {
             var json = Encoding.UTF8.GetString(item.OriginalEvent.Data);
             JsonConvert.DeserializeObject<Event>(json);
+            Console.WriteLine($"Deserialized message: {json}");
         }
     }
 }
