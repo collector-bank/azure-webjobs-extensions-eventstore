@@ -1,7 +1,7 @@
 ﻿using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Webjobs.Extensions.EventStore.Tests
+namespace Webjobs.Extensions.Eventstore.Tests
 {
     [TestClass]
     public class UnitTest1
