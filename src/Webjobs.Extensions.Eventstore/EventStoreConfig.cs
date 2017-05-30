@@ -91,10 +91,11 @@ namespace Webjobs.Extensions.Eventstore
             if(TimeOutInMilliSeconds ==  0)
                 TimeOutInMilliSeconds = 50;
             if(BatchSize == 0)
-                BatchSize = 10;
+                BatchSize = 100;
 
             _eventStoreSubscription = new EventStoreCatchUpSubscriptionObservable(EventStoreConnectionFactory.Create(ConnectionString), 
                 LastPosition,
+                BatchSize,
                 UserCredentialFactory.CreateAdminCredentials(Username, Password), 
                 context.Trace);
 

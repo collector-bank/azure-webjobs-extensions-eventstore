@@ -33,27 +33,41 @@ namespace Webjobs.Extensions.Eventstore.Impl
             _eventStoreSubscription = eventStoreSubscription;
             _liveProcessingReached = liveProcessingReached;
             _trace = trace;
-            _observable = _eventStoreSubscription
-                          .Buffer(TimeSpan.FromMilliseconds(500), 100)
-                          .Where(buffer => buffer.Any())
-                          .Subscribe(ProcessEvent, OnCompleted);
         }
         
         public Task StartAsync(CancellationToken cancellationToken)
         {
             _cancellationToken = cancellationToken;
+            _observable = _eventStoreSubscription
+                .Buffer(TimeSpan.FromMilliseconds(TimeOutInMilliSeconds), BatchSize)
+                .Where(buffer => buffer.Any())
+                .Subscribe(ProcessEvent, OnError, OnCompleted);
             _eventStoreSubscription.StartCatchUpSubscription();
+
             return Task.FromResult(true);
+        }
+
+        private IDisposable RestartSubscription()
+        {
+            var observable = _eventStoreSubscription
+                .Buffer(TimeSpan.FromMilliseconds(TimeOutInMilliSeconds), BatchSize)
+                .Where(buffer => buffer.Any())
+                .Subscribe(ProcessEvent, OnError);
+            return observable;
+        }
+
+        private void OnError(Exception obj)
+        {
+            _trace.Warning(obj.Message);
+            _observable = RestartSubscription();
+            _eventStoreSubscription.StartCatchUpSubscription();
         }
 
         private void OnCompleted()
         {
             _trace.Info("Subscription catch up complete calling handler");
             _liveProcessingReached?.Handle();
-            _observable = _eventStoreSubscription
-                          .Buffer(TimeSpan.FromMilliseconds(TimeOutInMilliSeconds), BatchSize)
-                          .Where(buffer => buffer.Any())
-                          .Subscribe(ProcessEvent);
+            _observable = RestartSubscription();
         }
 
         public Task StopAsync(CancellationToken cancellationToken)

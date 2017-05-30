@@ -15,16 +15,19 @@ namespace Webjobs.Extensions.Eventstore.Impl
         private readonly UserCredentials _userCredentials;
         private readonly TraceWriter _trace;
         private Position? _lastCheckpoint;
+        private readonly int _batchSize;
         private IObserver<ResolvedEvent> _observer;
         private readonly Stopwatch _catchupWatch = new Stopwatch();
         private EventBuffer _eventBuffer;
 
         public EventStoreCatchUpSubscriptionObservable(Lazy<IEventStoreConnection> connection,
             Position? lastCheckpoint,
+            int batchSize,
             UserCredentials userCredentials,
             TraceWriter trace)
         {
             _lastCheckpoint = lastCheckpoint;
+            _batchSize = batchSize;
             _userCredentials = userCredentials;
             _trace = trace;
             _connection = connection;
@@ -48,10 +51,10 @@ namespace Webjobs.Extensions.Eventstore.Impl
         {
             lock (LockObj)
             {
-                _eventBuffer = new EventBuffer(128);
+                _eventBuffer = new EventBuffer(_batchSize + 28);
             }
 
-            var settings = new CatchUpSubscriptionSettings(100000, 100, true, false);
+            var settings = new CatchUpSubscriptionSettings(100000, _batchSize, true, false);
             if (startPosition == null)
             {
                 var slice =
@@ -140,8 +143,7 @@ namespace Webjobs.Extensions.Eventstore.Impl
         {
             var msg = (e?.Message + " " + (e?.InnerException?.Message ?? "")).TrimEnd();
             _trace.Warning($"Subscription dropped because {reason}: {msg}");
-            if (reason == SubscriptionDropReason.ProcessingQueueOverflow)
-                RestartSubscription();
+            _observer.OnError(new Exception("Subscription dropped."));
         }
         
         public class EventBuffer

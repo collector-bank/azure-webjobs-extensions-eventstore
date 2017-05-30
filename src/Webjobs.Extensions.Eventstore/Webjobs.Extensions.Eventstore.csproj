@@ -4,7 +4,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{9B13F6C1-5009-4A36-B800-1951D551B1CC}</ProjectGuid>
+    <ProjectGuid>{96AAA96F-C15D-49A5-B871-52B60BD5B39F}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Webjobs.Extensions.Eventstore</RootNamespace>
