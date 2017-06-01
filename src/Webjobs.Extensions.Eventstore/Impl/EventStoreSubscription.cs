@@ -47,13 +47,14 @@ namespace Webjobs.Extensions.Eventstore.Impl
         }
 
         private static readonly object LockObj = new object();
+        private bool _onCompletedFired = false;
         private void StartCatchUpSubscription(Position? startPosition)
         {
             lock (LockObj)
             {
                 _eventBuffer = new EventBuffer(_batchSize + 28);
             }
-
+            _onCompletedFired = false;
             var settings = new CatchUpSubscriptionSettings(100000, _batchSize, true, false);
             if (startPosition == null)
             {
@@ -90,30 +91,24 @@ namespace Webjobs.Extensions.Eventstore.Impl
             }
         }
 
-        private void RestartSubscription()
+        public void RestartSubscription()
         {
             _trace.Info("Restarting subscription...");
             var startPosition = _lastCheckpoint;
+            StopSubscription();
             StartCatchUpSubscription(startPosition);
         }
 
         private void EventAppeared(EventStoreCatchUpSubscription sub, ResolvedEvent resolvedEvent)
         {
-            try
+            if (IsProcessable(resolvedEvent))
             {
-                if (IsProcessable(resolvedEvent))
+                _observer.OnNext(resolvedEvent);
+                var pos = resolvedEvent.OriginalPosition;
+                if (pos != null)
                 {
-                    _observer.OnNext(resolvedEvent);
-                    var pos = resolvedEvent.OriginalPosition;
-                    if (pos != null)
-                    {
-                        _lastCheckpoint = pos;
-                    }
-                }                
-            }
-            catch (Exception ex)
-            {
-                _observer.OnError(ex);
+                    _lastCheckpoint = pos;
+                }
             }
         }
 
@@ -136,14 +131,19 @@ namespace Webjobs.Extensions.Eventstore.Impl
 
         private void LiveProcessingStarted(EventStoreCatchUpSubscription sub)
         {
-            _observer.OnCompleted();
+            if (!_onCompletedFired)
+            {
+                _observer.OnCompleted();
+                _onCompletedFired = true;
+            }
         }
 
         private void SubscriptionDropped(EventStoreCatchUpSubscription sub, SubscriptionDropReason reason, Exception e)
         {
             var msg = (e?.Message + " " + (e?.InnerException?.Message ?? "")).TrimEnd();
             _trace.Warning($"Subscription dropped because {reason}: {msg}");
-            _observer.OnError(new Exception("Subscription dropped."));
+            if (reason == SubscriptionDropReason.ProcessingQueueOverflow)
+                RestartSubscription();
         }
         
         public class EventBuffer

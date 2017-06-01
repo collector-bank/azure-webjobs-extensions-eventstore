@@ -41,7 +41,7 @@ namespace Webjobs.Extensions.Eventstore.Impl
             _observable = _eventStoreSubscription
                 .Buffer(TimeSpan.FromMilliseconds(TimeOutInMilliSeconds), BatchSize)
                 .Where(buffer => buffer.Any())
-                .Subscribe(ProcessEvent, OnError, OnCompleted);
+                .Subscribe(ProcessEvent, OnCompleted);
             _eventStoreSubscription.StartCatchUpSubscription();
 
             return Task.FromResult(true);
@@ -49,20 +49,19 @@ namespace Webjobs.Extensions.Eventstore.Impl
 
         private IDisposable RestartSubscription()
         {
-            var observable = _eventStoreSubscription
-                .Buffer(TimeSpan.FromMilliseconds(TimeOutInMilliSeconds), BatchSize)
-                .Where(buffer => buffer.Any())
-                .Subscribe(ProcessEvent, OnError);
-            return observable;
+            _trace.Info("RX Restarting subscription");
+           
+            return GetObservable().Catch(GetObservable())
+                .Subscribe(ProcessEvent);
         }
 
-        private void OnError(Exception obj)
+        private IObservable<IEnumerable<ResolvedEvent>> GetObservable()
         {
-            _trace.Warning(obj.Message);
-            _observable = RestartSubscription();
-            _eventStoreSubscription.StartCatchUpSubscription();
+            return _eventStoreSubscription
+                .Buffer(TimeSpan.FromMilliseconds(TimeOutInMilliSeconds), BatchSize)
+                .Where(buffer => buffer.Any());
         }
-
+        
         private void OnCompleted()
         {
             _trace.Info("Subscription catch up complete calling handler");

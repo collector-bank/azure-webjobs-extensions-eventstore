@@ -6,6 +6,7 @@ namespace Webjobs.Extensions.Eventstore
     public interface IEventStoreSubscription : IObservable<ResolvedEvent>
     {
         void StartCatchUpSubscription();
+        void RestartSubscription();
         void StopSubscription();
     }
 }
