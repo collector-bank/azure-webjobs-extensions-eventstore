@@ -6,9 +6,9 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("Webjob.Extensions.Eventstore")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("Webjob trigger for event store subscription.")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
+[assembly: AssemblyCompany("Collector Bank.")]
 [assembly: AssemblyProduct("Webjob.Extensions.Eventstore")]
 [assembly: AssemblyCopyright("Copyright ©  2017")]
 [assembly: AssemblyTrademark("")]
