@@ -71,7 +71,7 @@ namespace Webjobs.Extensions.Eventstore.Impl
 
         public Task StopAsync(CancellationToken cancellationToken)
         {
-            _observable.Dispose();
+            Cancel();
             return Task.FromResult(true);
         }
 
@@ -87,12 +87,13 @@ namespace Webjobs.Extensions.Eventstore.Impl
         
         public void Cancel()
         {
-            _observable.Dispose();
+            _observable?.Dispose();
+            _eventStoreSubscription?.StopSubscription();
         }
 
         public void Dispose()
         {
-            _observable.Dispose();
+            Cancel();
         }
     }
 }
