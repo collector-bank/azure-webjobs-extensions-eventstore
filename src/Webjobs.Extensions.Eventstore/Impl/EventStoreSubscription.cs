@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reactive.Disposables;
+using System.Threading;
+using System.Threading.Tasks;
 using EventStore.ClientAPI;
 using EventStore.ClientAPI.SystemData;
 using Microsoft.Azure.WebJobs.Host;
@@ -19,10 +21,13 @@ namespace Webjobs.Extensions.Eventstore.Impl
         private IObserver<ResolvedEvent> _observer;
         private readonly Stopwatch _catchupWatch = new Stopwatch();
         private EventBuffer _eventBuffer;
+        private readonly int _maxLiveQueueMessage;
+        private CancellationToken _cancellationToken;
 
         public EventStoreCatchUpSubscriptionObservable(Lazy<IEventStoreConnection> connection,
             Position? lastCheckpoint,
             int batchSize,
+            int maxLiveQueueMessage,
             UserCredentials userCredentials,
             TraceWriter trace)
         {
@@ -31,6 +36,7 @@ namespace Webjobs.Extensions.Eventstore.Impl
             _userCredentials = userCredentials;
             _trace = trace;
             _connection = connection;
+            _maxLiveQueueMessage = maxLiveQueueMessage;
         }
 
         public IDisposable Subscribe(IObserver<ResolvedEvent> observer)
@@ -41,21 +47,27 @@ namespace Webjobs.Extensions.Eventstore.Impl
         
         private Position _lastAllPosition;
 
-        public void StartCatchUpSubscription()
+        public void Start(CancellationToken cancellationToken)
         {
+            _cancellationToken = cancellationToken;
             StartCatchUpSubscription(_lastCheckpoint);
         }
 
         private static readonly object LockObj = new object();
         private bool _onCompletedFired = false;
+        private CancellationTokenSource _cancellationTokenSource;
+
         private void StartCatchUpSubscription(Position? startPosition)
         {
+            _cancellationTokenSource = new CancellationTokenSource();
+            _cancellationToken = _cancellationTokenSource.Token;
+
             lock (LockObj)
             {
                 _eventBuffer = new EventBuffer(_batchSize + 28);
             }
             _onCompletedFired = false;
-            var settings = new CatchUpSubscriptionSettings(100000, _batchSize, true, false);
+            var settings = new CatchUpSubscriptionSettings(_maxLiveQueueMessage, _batchSize, true, false);
             if (startPosition == null)
             {
                 var slice =
@@ -73,13 +85,13 @@ namespace Webjobs.Extensions.Eventstore.Impl
             _trace.Info($"Catch-up subscription started from checkpoint {startPosition} at {DateTime.Now}.");
             _catchupWatch.Restart();
         }
-
-
-        public void StopSubscription()
+        
+        public void Stop()
         {
             if (_subscription == null) return;
             try
             {
+                _cancellationTokenSource.Cancel();
                 var timeout = TimeSpan.FromSeconds(5);
                 _trace.Info($"Stopping subscription with timeout {timeout}...");
                 _subscription?.Stop(timeout);
@@ -91,16 +103,22 @@ namespace Webjobs.Extensions.Eventstore.Impl
             }
         }
 
-        public void RestartSubscription()
+        public void Restart()
         {
             _trace.Info("Restarting subscription...");
             var startPosition = _lastCheckpoint;
-            StopSubscription();
+            Stop();
             StartCatchUpSubscription(startPosition);
         }
 
         private void EventAppeared(EventStoreCatchUpSubscription sub, ResolvedEvent resolvedEvent)
         {
+            if (_cancellationToken != CancellationToken.None && _cancellationToken.IsCancellationRequested)
+            {
+                Trace.TraceInformation("Cancellation requested, stopping subscription...");
+                sub.Stop();
+                return;
+            }
             if (IsProcessable(resolvedEvent))
             {
                 _observer.OnNext(resolvedEvent);
@@ -143,7 +161,7 @@ namespace Webjobs.Extensions.Eventstore.Impl
             var msg = (e?.Message + " " + (e?.InnerException?.Message ?? "")).TrimEnd();
             _trace.Warning($"Subscription dropped because {reason}: {msg}");
             if (reason == SubscriptionDropReason.ProcessingQueueOverflow)
-                RestartSubscription();
+                Restart();
         }
         
         public class EventBuffer

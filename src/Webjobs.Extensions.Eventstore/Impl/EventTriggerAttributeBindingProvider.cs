@@ -15,6 +15,31 @@ using Microsoft.Azure.WebJobs.Host.Triggers;
 
 namespace Webjobs.Extensions.Eventstore.Impl
 {
+    internal class LiveProcessingStartedAttributeBindingProvider : IBindingProvider
+    {
+        public Task<IBinding> TryCreateAsync(BindingProviderContext context)
+        {
+            if (context == null)
+            {
+                throw new ArgumentNullException("context");
+            }
+
+            ParameterInfo parameter = context.Parameter;
+            var attribute = parameter.GetCustomAttribute<LiveProcessingStartedAttribute>(inherit: false);
+            if (attribute == null)
+            {
+                return Task.FromResult<IBinding>(null);
+            }
+
+            if (parameter.ParameterType != typeof(IEnumerable<ResolvedEvent>))
+            {
+                throw new InvalidOperationException(string.Format(CultureInfo.CurrentCulture,
+                    "Can't bind LiveProcessingStartedAttribute to type '{0}'.", parameter.ParameterType));
+            }
+
+            return Task.FromResult<ITriggerBinding>(new EventTriggerBinding(_config, parameter, attribute, _trace, this));
+        }
+    }
     internal class EventTriggerAttributeBindingProvider<TAttribute> : ITriggerBindingProvider where TAttribute : Attribute
     {
         private readonly Func<JobHostConfiguration, TAttribute, ITriggeredFunctionExecutor, TraceWriter, Task<IListener>> _listenerBuilder;

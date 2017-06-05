@@ -36,12 +36,7 @@ namespace Webjobs.Extensions.Eventstore
         /// Factory used to create an event store listener.
         /// </summary>
         public IListenerFactory EventStoreListenerFactory { get; set; }
-
-        /// <summary>
-        /// Handler called when processing of event has catchup with present.
-        /// </summary>
-        public ILiveProcessingReached LiveProcessingReachedHandler { get; set; }
-
+        
         /// <summary>
         /// The username used in UserCredentialFactory to gain access to event store.
         /// </summary>
@@ -61,10 +56,16 @@ namespace Webjobs.Extensions.Eventstore
         /// If batchSize is not exceeded within this timeout trigger is fired.
         /// </summary>
         public int TimeOutInMilliSeconds { get; set; }
+        
         /// <summary>
         /// Max batch size before a trigger is fired for event store subscription.
         /// </summary>
         public int BatchSize { get; set; }
+
+        /// <summary>
+        /// Queue size for the event store live stream.
+        /// </summary>
+        public int MaxLiveQueueSize { get; set; }
 
         private IEventStoreSubscription _eventStoreSubscription;
         
@@ -92,10 +93,13 @@ namespace Webjobs.Extensions.Eventstore
                 TimeOutInMilliSeconds = 50;
             if(BatchSize == 0)
                 BatchSize = 100;
+            if (MaxLiveQueueSize == 0)
+                MaxLiveQueueSize = 200;
 
             _eventStoreSubscription = new EventStoreCatchUpSubscriptionObservable(EventStoreConnectionFactory.Create(ConnectionString), 
                 LastPosition,
                 BatchSize,
+                MaxLiveQueueSize,
                 UserCredentialFactory.CreateAdminCredentials(Username, Password), 
                 context.Trace);
 
@@ -111,7 +115,7 @@ namespace Webjobs.Extensions.Eventstore
             IListener listener;
             if (EventStoreListenerFactory == null)
             {
-                listener = new EventStoreListener(executor, _eventStoreSubscription, LiveProcessingReachedHandler, trace)
+                listener = new EventStoreListener(executor, _eventStoreSubscription, trace)
                 {
                     BatchSize = BatchSize,
                     TimeOutInMilliSeconds = TimeOutInMilliSeconds

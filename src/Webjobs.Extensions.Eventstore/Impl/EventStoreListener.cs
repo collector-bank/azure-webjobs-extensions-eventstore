@@ -15,7 +15,6 @@ namespace Webjobs.Extensions.Eventstore.Impl
     {
         private readonly ITriggeredFunctionExecutor _executor;
         private readonly IEventStoreSubscription _eventStoreSubscription;
-        private readonly ILiveProcessingReached _liveProcessingReached;
         private readonly TraceWriter _trace;
         private CancellationToken _cancellationToken = CancellationToken.None;
         private IDisposable _observable;
@@ -26,12 +25,10 @@ namespace Webjobs.Extensions.Eventstore.Impl
 
         public EventStoreListener(ITriggeredFunctionExecutor executor, 
                                   IEventStoreSubscription eventStoreSubscription,
-                                  ILiveProcessingReached liveProcessingReached,
                                   TraceWriter trace)
         {
             _executor = executor;
             _eventStoreSubscription = eventStoreSubscription;
-            _liveProcessingReached = liveProcessingReached;
             _trace = trace;
         }
         
@@ -42,7 +39,7 @@ namespace Webjobs.Extensions.Eventstore.Impl
                 .Buffer(TimeSpan.FromMilliseconds(TimeOutInMilliSeconds), BatchSize)
                 .Where(buffer => buffer.Any())
                 .Subscribe(ProcessEvent, OnCompleted);
-            _eventStoreSubscription.StartCatchUpSubscription();
+            _eventStoreSubscription.Start(cancellationToken);
 
             return Task.FromResult(true);
         }
@@ -65,13 +62,16 @@ namespace Webjobs.Extensions.Eventstore.Impl
         private void OnCompleted()
         {
             _trace.Info("Subscription catch up complete calling handler");
-            _liveProcessingReached?.Handle();
+            //Send to delegate
+
             _observable = RestartSubscription();
         }
 
         public Task StopAsync(CancellationToken cancellationToken)
         {
             _observable.Dispose();
+            _eventStoreSubscription.Stop();
+           
             return Task.FromResult(true);
         }
 
