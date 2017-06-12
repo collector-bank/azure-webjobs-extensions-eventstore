@@ -56,16 +56,7 @@ namespace Webjobs.Extensions.Eventstore
         /// The connection string to the event store cluster.
         /// </summary>
         public string ConnectionString { get; set; }
-
-        /// <summary>
-        /// If batchSize is not exceeded within this timeout trigger is fired.
-        /// </summary>
-        public int TimeOutInMilliSeconds { get; set; }
-        /// <summary>
-        /// Max batch size before a trigger is fired for event store subscription.
-        /// </summary>
-        public int BatchSize { get; set; }
-
+        
         private IEventStoreSubscription _eventStoreSubscription;
         
         /// <summary>
@@ -87,15 +78,10 @@ namespace Webjobs.Extensions.Eventstore
             
             var triggerBindingProvider = new EventTriggerAttributeBindingProvider<EventTriggerAttribute>(
                 BuildListener, context.Config, context.Trace);
-
-            if(TimeOutInMilliSeconds ==  0)
-                TimeOutInMilliSeconds = 50;
-            if(BatchSize == 0)
-                BatchSize = 100;
-
+            
             _eventStoreSubscription = new EventStoreCatchUpSubscriptionObservable(EventStoreConnectionFactory.Create(ConnectionString), 
                 LastPosition,
-                BatchSize,
+                
                 UserCredentialFactory.CreateAdminCredentials(Username, Password), 
                 context.Trace);
 
@@ -104,8 +90,8 @@ namespace Webjobs.Extensions.Eventstore
                 triggerBindingProvider);
         }
         
-        private Task<IListener> BuildListener<TAttribute>(JobHostConfiguration config, 
-            TAttribute attribute,
+        private Task<IListener> BuildListener(JobHostConfiguration config,
+            EventTriggerAttribute attribute,
             ITriggeredFunctionExecutor executor, TraceWriter trace)
         {
             IListener listener;
@@ -113,8 +99,8 @@ namespace Webjobs.Extensions.Eventstore
             {
                 listener = new EventStoreListener(executor, _eventStoreSubscription, LiveProcessingReachedHandler, trace)
                 {
-                    BatchSize = BatchSize,
-                    TimeOutInMilliSeconds = TimeOutInMilliSeconds
+                    BatchSize = attribute.BatchSize,
+                    TimeOutInMilliSeconds = attribute.TimeOutInMilliSeconds
                 };
             }
             else

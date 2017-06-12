@@ -42,7 +42,7 @@ namespace Webjobs.Extensions.Eventstore.Impl
                 .Buffer(TimeSpan.FromMilliseconds(TimeOutInMilliSeconds), BatchSize)
                 .Where(buffer => buffer.Any())
                 .Subscribe(ProcessEvent, OnCompleted);
-            _eventStoreSubscription.StartCatchUpSubscription();
+            _eventStoreSubscription.StartCatchUpSubscription(BatchSize);
 
             return Task.FromResult(true);
         }
