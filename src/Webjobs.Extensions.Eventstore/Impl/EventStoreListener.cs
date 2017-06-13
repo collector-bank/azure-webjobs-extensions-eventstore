@@ -39,7 +39,7 @@ namespace Webjobs.Extensions.Eventstore.Impl
                 .Buffer(TimeSpan.FromMilliseconds(TimeOutInMilliSeconds), BatchSize)
                 .Where(buffer => buffer.Any())
                 .Subscribe(ProcessEvent, OnCompleted);
-            _eventStoreSubscription.Start(cancellationToken);
+            _eventStoreSubscription.Start(cancellationToken, BatchSize);
 
             return Task.FromResult(true);
         }
@@ -87,12 +87,13 @@ namespace Webjobs.Extensions.Eventstore.Impl
         
         public void Cancel()
         {
-            _observable.Dispose();
+            _observable?.Dispose();
+            _eventStoreSubscription?.StopSubscription();
         }
 
         public void Dispose()
         {
-            _observable.Dispose();
+            Cancel();
         }
     }
 }

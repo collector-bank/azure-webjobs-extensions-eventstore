@@ -17,7 +17,7 @@ namespace Webjobs.Extensions.Eventstore.Impl
         private readonly UserCredentials _userCredentials;
         private readonly TraceWriter _trace;
         private Position? _lastCheckpoint;
-        private readonly int _batchSize;
+        private int _batchSize;
         private IObserver<ResolvedEvent> _observer;
         private readonly Stopwatch _catchupWatch = new Stopwatch();
         private EventBuffer _eventBuffer;
@@ -26,13 +26,11 @@ namespace Webjobs.Extensions.Eventstore.Impl
 
         public EventStoreCatchUpSubscriptionObservable(Lazy<IEventStoreConnection> connection,
             Position? lastCheckpoint,
-            int batchSize,
             int maxLiveQueueMessage,
             UserCredentials userCredentials,
             TraceWriter trace)
         {
             _lastCheckpoint = lastCheckpoint;
-            _batchSize = batchSize;
             _userCredentials = userCredentials;
             _trace = trace;
             _connection = connection;
@@ -47,9 +45,9 @@ namespace Webjobs.Extensions.Eventstore.Impl
         
         private Position _lastAllPosition;
 
-        public void Start(CancellationToken cancellationToken)
+        public void Start(CancellationToken cancellationToken, int batchSize)
         {
-            _cancellationToken = cancellationToken;
+            _batchSize = batchSize;
             StartCatchUpSubscription(_lastCheckpoint);
         }
 
@@ -164,7 +162,7 @@ namespace Webjobs.Extensions.Eventstore.Impl
                 Restart();
         }
         
-        public class EventBuffer
+        private class EventBuffer
         {
             private readonly Queue<Guid> _buffer;
             private readonly int _maxCapacity;

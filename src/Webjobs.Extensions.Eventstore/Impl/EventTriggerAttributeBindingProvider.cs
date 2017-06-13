@@ -71,7 +71,6 @@ namespace Webjobs.Extensions.Eventstore.Impl
             }
             
             if (parameter.ParameterType != typeof(EventTriggerData) &&
-                parameter.ParameterType != typeof(EventStoreCatchUpSubscription) &&
                 parameter.ParameterType != typeof(IEnumerable<ResolvedEvent>))
             {
                 throw new InvalidOperationException(string.Format(CultureInfo.CurrentCulture,
