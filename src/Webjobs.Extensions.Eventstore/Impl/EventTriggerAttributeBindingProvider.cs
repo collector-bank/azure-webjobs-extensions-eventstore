@@ -15,31 +15,6 @@ using Microsoft.Azure.WebJobs.Host.Triggers;
 
 namespace Webjobs.Extensions.Eventstore.Impl
 {
-    internal class LiveProcessingStartedAttributeBindingProvider : IBindingProvider
-    {
-        public Task<IBinding> TryCreateAsync(BindingProviderContext context)
-        {
-            if (context == null)
-            {
-                throw new ArgumentNullException("context");
-            }
-
-            ParameterInfo parameter = context.Parameter;
-            var attribute = parameter.GetCustomAttribute<LiveProcessingStartedAttribute>(inherit: false);
-            if (attribute == null)
-            {
-                return Task.FromResult<IBinding>(null);
-            }
-
-            if (parameter.ParameterType != typeof(IEnumerable<ResolvedEvent>))
-            {
-                throw new InvalidOperationException(string.Format(CultureInfo.CurrentCulture,
-                    "Can't bind LiveProcessingStartedAttribute to type '{0}'.", parameter.ParameterType));
-            }
-
-            return Task.FromResult<ITriggerBinding>(new EventTriggerBinding(_config, parameter, attribute, _trace, this));
-        }
-    }
     internal class EventTriggerAttributeBindingProvider<TAttribute> : ITriggerBindingProvider where TAttribute : Attribute
     {
         private readonly Func<JobHostConfiguration, TAttribute, ITriggeredFunctionExecutor, TraceWriter, Task<IListener>> _listenerBuilder;
@@ -86,7 +61,6 @@ namespace Webjobs.Extensions.Eventstore.Impl
             private readonly ParameterInfo _parameter;
             private readonly TAttribute _attribute;
             private readonly TraceWriter _trace;
-            private readonly IReadOnlyDictionary<string, Type> _bindingContract;
             private readonly EventTriggerAttributeBindingProvider<TAttribute> _parent;
 
             public EventTriggerBinding(JobHostConfiguration config,
@@ -99,28 +73,22 @@ namespace Webjobs.Extensions.Eventstore.Impl
                 _parameter = parameter;
                 _attribute = attribute;
                 _trace = trace;
-                _bindingContract = CreateBindingDataContract();
+                BindingDataContract = CreateBindingDataContract();
                 _parent = parent;
             }
 
-            public IReadOnlyDictionary<string, Type> BindingDataContract
-            {
-                get { return _bindingContract; }
-            }
+            public IReadOnlyDictionary<string, Type> BindingDataContract { get; }
 
-            public Type TriggerValueType
-            {
-                get { return typeof(EventStoreTriggerValue); }
-            }
+            public Type TriggerValueType => typeof(EventStoreTriggerValue);
 
             public Task<ITriggerData> BindAsync(object value, ValueBindingContext context)
             {
-                if (value != null && value.GetType() == typeof(string))
+                if (value is string)
                 {
-                    throw new NotSupportedException("ErrorTrigger does not support Dashboard invocation.");
+                    throw new NotSupportedException("EventTrigger does not support Dashboard invocation.");
                 }
 
-                EventStoreTriggerValue triggerValue = value as EventStoreTriggerValue;
+                var triggerValue = value as EventStoreTriggerValue;
                 IValueBinder valueBinder = new EventStoreTriggerValueBinder(_parameter, triggerValue);
                 return Task.FromResult<ITriggerData>(new TriggerData(valueBinder, GetBindingData(triggerValue)));
             }

@@ -75,9 +75,6 @@ namespace Webjobs.Extensions.Eventstore
 
             if (UserCredentialFactory == null)
                 UserCredentialFactory = new UserCredentialFactory();
-            
-            var triggerBindingProvider = new EventTriggerAttributeBindingProvider<EventTriggerAttribute>(
-                BuildListener, context.Config, context.Trace);
 
             if (MaxLiveQueueSize == 0)
                 MaxLiveQueueSize = 200;
@@ -88,9 +85,16 @@ namespace Webjobs.Extensions.Eventstore
                 UserCredentialFactory.CreateAdminCredentials(Username, Password), 
                 context.Trace);
 
+            var triggerBindingProvider = new EventTriggerAttributeBindingProvider<EventTriggerAttribute>(
+                BuildListener, context.Config, context.Trace);
+
+            var liveProcessingStartedBindingProvider = new LiveProcessingStartedAttributeBindingProvider(_eventStoreSubscription);
+
             // Register our extension binding providers
             context.Config.RegisterBindingExtensions(
                 triggerBindingProvider);
+            context.Config.RegisterBindingExtensions(
+                liveProcessingStartedBindingProvider);
         }
         
         private Task<IListener> BuildListener(JobHostConfiguration config,

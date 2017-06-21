@@ -11,6 +11,44 @@ using Microsoft.Azure.WebJobs.Host.Listeners;
 
 namespace Webjobs.Extensions.Eventstore.Impl
 {
+    public class LiveProcessingStartedListener : IListener
+    {
+        private readonly ITriggeredFunctionExecutor _executor;
+        private readonly IEventStoreSubscription _eventStoreSubscription;
+        private readonly TraceWriter _trace;
+        private CancellationToken _cancellationToken = CancellationToken.None;
+        private IDisposable _observable;
+
+        public LiveProcessingStartedListener(ITriggeredFunctionExecutor executor,
+            IEventStoreSubscription eventStoreSubscription,
+            TraceWriter trace)
+        {
+            _executor = executor;
+            _eventStoreSubscription = eventStoreSubscription;
+            _trace = trace;
+        }
+
+        public Task StartAsync(CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task StopAsync(CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Cancel()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Dispose()
+        {
+            throw new NotImplementedException();
+        }
+    }
+
     public class EventStoreListener : IListener
     {
         private readonly ITriggeredFunctionExecutor _executor;
@@ -88,7 +126,7 @@ namespace Webjobs.Extensions.Eventstore.Impl
         public void Cancel()
         {
             _observable?.Dispose();
-            _eventStoreSubscription?.StopSubscription();
+            _eventStoreSubscription?.Stop();
         }
 
         public void Dispose()

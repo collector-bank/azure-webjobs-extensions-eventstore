@@ -108,14 +108,15 @@
     <Compile Include="IEventStoreConnectionFactory.cs" />
     <Compile Include="IEventStoreSubscription.cs" />
     <Compile Include="IListenerFactory.cs" />
-    <Compile Include="ILiveProcessingReached.cs" />
     <Compile Include="Impl\EventStoreConnectionFactory.cs" />
     <Compile Include="Impl\EventStoreListener.cs" />
     <Compile Include="Impl\EventStoreSubscription.cs" />
     <Compile Include="Impl\EventStoreTriggerValue.cs" />
     <Compile Include="Impl\EventTriggerAttributeBindingProvider.cs" />
+    <Compile Include="Impl\LiveProcessingStartedAttributeBindingProvider.cs" />
     <Compile Include="Impl\UserCredentialFactory.cs" />
     <Compile Include="IUserCredentialFactory.cs" />
+    <Compile Include="Impl\LiveProcessingStartedAttribute.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

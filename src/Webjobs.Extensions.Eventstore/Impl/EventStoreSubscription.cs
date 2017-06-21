@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reactive.Disposables;
 using System.Threading;
-using System.Threading.Tasks;
 using EventStore.ClientAPI;
 using EventStore.ClientAPI.SystemData;
 using Microsoft.Azure.WebJobs.Host;

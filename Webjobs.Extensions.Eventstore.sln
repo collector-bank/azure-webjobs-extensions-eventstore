@@ -1,13 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26403.7
+VisualStudioVersion = 15.0.26430.13
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Webjobs.Extensions.Eventstore.Tests", "src\Webjobs.Extensions.Eventstore.Tests\Webjobs.Extensions.Eventstore.Tests.csproj", "{44D820CB-D6FE-4590-A6CE-0D5AF0FF9854}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Webjobs.Extensions.Eventstore.Sample", "src\Webjobs.Extensions.Eventstore.Sample\Webjobs.Extensions.Eventstore.Sample.csproj", "{3EFD8E52-842F-4701-8BE2-14431ED73491}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventsEmiter", "src\EventsEmiter\EventsEmiter.csproj", "{2B52F34C-2B0C-469F-844C-C59FC68BF7F1}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventsEmitter", "src\EventsEmiter\EventsEmitter.csproj", "{2B52F34C-2B0C-469F-844C-C59FC68BF7F1}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Webjobs.Extensions.Eventstore", "src\Webjobs.Extensions.Eventstore\Webjobs.Extensions.Eventstore.csproj", "{9B13F6C1-5009-4A36-B800-1951D551B1CC}"
 EndProject
