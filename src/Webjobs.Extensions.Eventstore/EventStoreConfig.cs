@@ -88,7 +88,7 @@ namespace Webjobs.Extensions.Eventstore
             var triggerBindingProvider = new EventTriggerAttributeBindingProvider<EventTriggerAttribute>(
                 BuildListener, context.Config, context.Trace);
 
-            var liveProcessingStartedBindingProvider = new LiveProcessingStartedAttributeBindingProvider(_eventStoreSubscription);
+            var liveProcessingStartedBindingProvider = new LiveProcessingStartedAttributeBindingProvider(_eventStoreSubscription, context.Trace);
 
             // Register our extension binding providers
             context.Config.RegisterBindingExtensions(

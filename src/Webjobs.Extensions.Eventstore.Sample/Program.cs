@@ -34,8 +34,8 @@ namespace Webjobs.Extensions.Eventstore.Sample
                     ConnectionString = ConfigurationManager.AppSettings["EventStoreConnectionString"],
                     Username = ConfigurationManager.AppSettings["EventStoreAdminUser"],
                     Password = ConfigurationManager.AppSettings["EventStoreAdminPassword"],
-                    LiveProcessingReachedHandler = container.GetInstance<ILiveProcessingReached>(),
-                    LastPosition = new Position(0,0)
+                    LastPosition = new Position(0,0),
+                    MaxLiveQueueSize = 500
                 });
             }
 
@@ -47,7 +47,6 @@ namespace Webjobs.Extensions.Eventstore.Sample
 
         private static void InitíalizeContainer(Container container)
         {
-            container.Register<ILiveProcessingReached, Handler>();
             container.Register<IEventPublisher<ResolvedEvent>, EventPublisher>();
         }
     }

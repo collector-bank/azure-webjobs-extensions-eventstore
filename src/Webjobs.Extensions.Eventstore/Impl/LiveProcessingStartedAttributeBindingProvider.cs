@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Reflection;
 using System.Threading.Tasks;
-using EventStore.ClientAPI;
 using Microsoft.Azure.WebJobs.Extensions.Bindings;
 using Microsoft.Azure.WebJobs.Host;
 using Microsoft.Azure.WebJobs.Host.Bindings;
@@ -13,25 +12,6 @@ using Microsoft.Azure.WebJobs.Host.Triggers;
 
 namespace Webjobs.Extensions.Eventstore.Impl
 {
-    public class LiveProcessingStartedContext
-    {
-        public EventStoreCatchUpSubscription Subscription { get; }
-        public LiveProcessingStartedContext(EventStoreCatchUpSubscription subscription)
-        {
-            Subscription = subscription;
-        }
-    }
-
-    internal class LiveProcessingStartedTriggerValue
-    {
-        public EventStoreCatchUpSubscription Subscription { get; }
-
-        public LiveProcessingStartedTriggerValue(EventStoreCatchUpSubscription subscription)
-        {
-            Subscription = subscription;
-        }
-    }
-
     internal class LiveProcessingStartedAttributeBindingProvider : ITriggerBindingProvider
     {
         private readonly IEventStoreSubscription _eventStoreSubscription;
@@ -98,7 +78,9 @@ namespace Webjobs.Extensions.Eventstore.Impl
 
             public Task<IListener> CreateListenerAsync(ListenerFactoryContext context)
             {
-                return null;
+                IListener listener =
+                    new LiveProcessingStartedListener(context.Executor, _eventStoreSubscription, _trace);
+                return Task.FromResult(listener);
             }
 
             public ParameterDescriptor ToParameterDescriptor()

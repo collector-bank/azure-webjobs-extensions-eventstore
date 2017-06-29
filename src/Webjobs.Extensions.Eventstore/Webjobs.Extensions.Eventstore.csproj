@@ -114,6 +114,9 @@
     <Compile Include="Impl\EventStoreTriggerValue.cs" />
     <Compile Include="Impl\EventTriggerAttributeBindingProvider.cs" />
     <Compile Include="Impl\LiveProcessingStartedAttributeBindingProvider.cs" />
+    <Compile Include="Impl\LiveProcessingStartedContext.cs" />
+    <Compile Include="Impl\LiveProcessingStartedListener.cs" />
+    <Compile Include="Impl\LiveProcessingStartedTriggerValue.cs" />
     <Compile Include="Impl\UserCredentialFactory.cs" />
     <Compile Include="IUserCredentialFactory.cs" />
     <Compile Include="Impl\LiveProcessingStartedAttribute.cs" />

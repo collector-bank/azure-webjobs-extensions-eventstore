@@ -1,7 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Reactive;
 using System.Reactive.Disposables;
+using System.Reactive.Linq;
+using System.Reactive.Subjects;
 using System.Threading;
 using EventStore.ClientAPI;
 using EventStore.ClientAPI.SystemData;
@@ -17,12 +20,16 @@ namespace Webjobs.Extensions.Eventstore.Impl
         private readonly TraceWriter _trace;
         private Position? _lastCheckpoint;
         private int _batchSize;
-        private IObserver<ResolvedEvent> _observer;
         private readonly Stopwatch _catchupWatch = new Stopwatch();
         private EventBuffer _eventBuffer;
         private readonly int _maxLiveQueueMessage;
         private CancellationToken _cancellationToken;
-
+        
+        private readonly Subject<ResolvedEvent> _subject;
+        private readonly IConnectableObservable<ResolvedEvent> _observable;
+        private bool _onCompletedFired;
+        private bool _isStarted;
+        
         public EventStoreCatchUpSubscriptionObservable(Lazy<IEventStoreConnection> connection,
             Position? lastCheckpoint,
             int maxLiveQueueMessage,
@@ -34,36 +41,30 @@ namespace Webjobs.Extensions.Eventstore.Impl
             _trace = trace;
             _connection = connection;
             _maxLiveQueueMessage = maxLiveQueueMessage;
-        }
 
-        public IDisposable Subscribe(IObserver<ResolvedEvent> observer)
-        {
-            _observer = observer;
-            return Disposable.Create(() => { });
+            _subject = new Subject<ResolvedEvent>();
+            _observable = _subject.Publish();
         }
         
         private Position _lastAllPosition;
 
-        public void Start(CancellationToken cancellationToken, int batchSize)
+        public void Start(CancellationToken cancellationToken, int batchSize = 200)
         {
             _batchSize = batchSize;
-            StartCatchUpSubscription(_lastCheckpoint);
+            _cancellationToken = cancellationToken;
+            if(!_isStarted)
+                StartCatchUpSubscription(_lastCheckpoint);
         }
 
         private static readonly object LockObj = new object();
-        private bool _onCompletedFired = false;
-        private CancellationTokenSource _cancellationTokenSource;
-
         private void StartCatchUpSubscription(Position? startPosition)
         {
-            _cancellationTokenSource = new CancellationTokenSource();
-            _cancellationToken = _cancellationTokenSource.Token;
-
             lock (LockObj)
             {
                 _eventBuffer = new EventBuffer(_batchSize + 28);
             }
             _onCompletedFired = false;
+            _isStarted = true;
             var settings = new CatchUpSubscriptionSettings(_maxLiveQueueMessage, _batchSize, true, false);
             if (startPosition == null)
             {
@@ -78,7 +79,7 @@ namespace Webjobs.Extensions.Eventstore.Impl
                 LiveProcessingStarted,
                 SubscriptionDropped,
                 _userCredentials);
-
+            
             _trace.Info($"Catch-up subscription started from checkpoint {startPosition} at {DateTime.Now}.");
             _catchupWatch.Restart();
         }
@@ -88,7 +89,6 @@ namespace Webjobs.Extensions.Eventstore.Impl
             if (_subscription == null) return;
             try
             {
-                _cancellationTokenSource.Cancel();
                 var timeout = TimeSpan.FromSeconds(5);
                 _trace.Info($"Stopping subscription with timeout {timeout}...");
                 _subscription?.Stop(timeout);
@@ -98,6 +98,22 @@ namespace Webjobs.Extensions.Eventstore.Impl
             {
                 _trace.Warning("The subscription did not stop within the specified time.");
             }
+            _isStarted = false;
+        }
+
+        public IConnectableObservable<ResolvedEvent> Observable()
+        {
+            return _observable;
+        }
+
+        public IDisposable Subscribe(IObserver<ResolvedEvent> observer)
+        {
+            return _observable.Subscribe(observer);
+        }
+
+        public IDisposable Connect()
+        {
+            return _observable.Connect();
         }
 
         public void Restart()
@@ -118,7 +134,7 @@ namespace Webjobs.Extensions.Eventstore.Impl
             }
             if (IsProcessable(resolvedEvent))
             {
-                _observer.OnNext(resolvedEvent);
+                _subject.OnNext(resolvedEvent);
                 var pos = resolvedEvent.OriginalPosition;
                 if (pos != null)
                 {
@@ -148,7 +164,7 @@ namespace Webjobs.Extensions.Eventstore.Impl
         {
             if (!_onCompletedFired)
             {
-                _observer.OnCompleted();
+                _subject.OnCompleted();
                 _onCompletedFired = true;
             }
         }

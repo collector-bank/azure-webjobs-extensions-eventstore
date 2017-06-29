@@ -1,58 +1,20 @@
+using EventStore.ClientAPI;
+using Microsoft.Azure.WebJobs.Host;
+using Microsoft.Azure.WebJobs.Host.Executors;
+using Microsoft.Azure.WebJobs.Host.Listeners;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.ClientAPI;
-using Microsoft.Azure.WebJobs.Host;
-using Microsoft.Azure.WebJobs.Host.Executors;
-using Microsoft.Azure.WebJobs.Host.Listeners;
 
 namespace Webjobs.Extensions.Eventstore.Impl
 {
-    public class LiveProcessingStartedListener : IListener
-    {
-        private readonly ITriggeredFunctionExecutor _executor;
-        private readonly IEventStoreSubscription _eventStoreSubscription;
-        private readonly TraceWriter _trace;
-        private CancellationToken _cancellationToken = CancellationToken.None;
-        private IDisposable _observable;
-
-        public LiveProcessingStartedListener(ITriggeredFunctionExecutor executor,
-            IEventStoreSubscription eventStoreSubscription,
-            TraceWriter trace)
-        {
-            _executor = executor;
-            _eventStoreSubscription = eventStoreSubscription;
-            _trace = trace;
-        }
-
-        public Task StartAsync(CancellationToken cancellationToken)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task StopAsync(CancellationToken cancellationToken)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Cancel()
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Dispose()
-        {
-            throw new NotImplementedException();
-        }
-    }
-
     public class EventStoreListener : IListener
     {
         private readonly ITriggeredFunctionExecutor _executor;
-        private readonly IEventStoreSubscription _eventStoreSubscription;
+        private IEventStoreSubscription _eventStoreSubscription;
         private readonly TraceWriter _trace;
         private CancellationToken _cancellationToken = CancellationToken.None;
         private IDisposable _observable;
@@ -77,6 +39,9 @@ namespace Webjobs.Extensions.Eventstore.Impl
                 .Buffer(TimeSpan.FromMilliseconds(TimeOutInMilliSeconds), BatchSize)
                 .Where(buffer => buffer.Any())
                 .Subscribe(ProcessEvent, OnCompleted);
+
+            _eventStoreSubscription.Connect();
+
             _eventStoreSubscription.Start(cancellationToken, BatchSize);
 
             return Task.FromResult(true);
@@ -84,7 +49,7 @@ namespace Webjobs.Extensions.Eventstore.Impl
 
         private IDisposable RestartSubscription()
         {
-            _trace.Info("RX Restarting subscription");
+            _trace.Info("Restarting observable subscription.");
            
             return GetObservable().Catch(GetObservable())
                 .Subscribe(ProcessEvent);
