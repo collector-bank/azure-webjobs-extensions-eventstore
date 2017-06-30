@@ -88,7 +88,8 @@ namespace Webjobs.Extensions.Eventstore
             var triggerBindingProvider = new EventTriggerAttributeBindingProvider<EventTriggerAttribute>(
                 BuildListener, context.Config, context.Trace);
 
-            var liveProcessingStartedBindingProvider = new LiveProcessingStartedAttributeBindingProvider(_eventStoreSubscription, context.Trace);
+            var liveProcessingStartedBindingProvider = new LiveProcessingStartedAttributeBindingProvider(
+                BuildListener, context.Trace);
 
             // Register our extension binding providers
             context.Config.RegisterBindingExtensions(
@@ -96,9 +97,10 @@ namespace Webjobs.Extensions.Eventstore
             context.Config.RegisterBindingExtensions(
                 liveProcessingStartedBindingProvider);
         }
-        
-        private Task<IListener> BuildListener(JobHostConfiguration config,
-            EventTriggerAttribute attribute,
+
+        private int _batchSize = 100;
+        private int _timeOutInMilliSeconds = 50;
+        private Task<IListener> BuildListener(EventTriggerAttribute attribute,
             ITriggeredFunctionExecutor executor, TraceWriter trace)
         {
             IListener listener;
@@ -106,8 +108,8 @@ namespace Webjobs.Extensions.Eventstore
             {
                 listener = new EventStoreListener(executor, _eventStoreSubscription, trace)
                 {
-                    BatchSize = attribute.BatchSize,
-                    TimeOutInMilliSeconds = attribute.TimeOutInMilliSeconds
+                    BatchSize = _batchSize = attribute.BatchSize,
+                    TimeOutInMilliSeconds = _timeOutInMilliSeconds = attribute.TimeOutInMilliSeconds
                 };
             }
             else
@@ -116,5 +118,17 @@ namespace Webjobs.Extensions.Eventstore
             }
             return Task.FromResult<IListener>(listener);
         }
+
+        private Task<IListener> BuildListener(ITriggeredFunctionExecutor executor, TraceWriter trace)
+        {
+            IListener listener = new LiveProcessingStartedListener(executor, 
+                _eventStoreSubscription,
+                _batchSize,
+                _timeOutInMilliSeconds,
+                trace);
+            return Task.FromResult<IListener>(listener);
+        }
+
+
     }
 }

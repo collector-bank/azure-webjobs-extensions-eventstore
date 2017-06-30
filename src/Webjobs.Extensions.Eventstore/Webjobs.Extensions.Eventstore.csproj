@@ -119,7 +119,7 @@
     <Compile Include="Impl\LiveProcessingStartedTriggerValue.cs" />
     <Compile Include="Impl\UserCredentialFactory.cs" />
     <Compile Include="IUserCredentialFactory.cs" />
-    <Compile Include="Impl\LiveProcessingStartedAttribute.cs" />
+    <Compile Include="LiveProcessingStartedAttribute.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

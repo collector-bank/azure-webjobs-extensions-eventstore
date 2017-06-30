@@ -17,12 +17,12 @@ namespace Webjobs.Extensions.Eventstore.Impl
 {
     internal class EventTriggerAttributeBindingProvider<TAttribute> : ITriggerBindingProvider where TAttribute : Attribute
     {
-        private readonly Func<JobHostConfiguration, TAttribute, ITriggeredFunctionExecutor, TraceWriter, Task<IListener>> _listenerBuilder;
+        private readonly Func<TAttribute, ITriggeredFunctionExecutor, TraceWriter, Task<IListener>> _listenerBuilder;
         private readonly TraceWriter _trace;
         private readonly JobHostConfiguration _config;
 
         public EventTriggerAttributeBindingProvider(
-            Func<JobHostConfiguration, TAttribute, ITriggeredFunctionExecutor, TraceWriter, Task<IListener>> listenerBuilder,
+            Func<TAttribute, ITriggeredFunctionExecutor, TraceWriter, Task<IListener>> listenerBuilder,
             JobHostConfiguration config,
             TraceWriter trace)
         {
@@ -95,7 +95,7 @@ namespace Webjobs.Extensions.Eventstore.Impl
 
             public Task<IListener> CreateListenerAsync(ListenerFactoryContext context)
             {
-                Task<IListener> listener = _parent._listenerBuilder(_config, _attribute, context.Executor, _trace);
+                Task<IListener> listener = _parent._listenerBuilder(_attribute, context.Executor, _trace);
                 return listener;
             }
 

@@ -41,8 +41,10 @@ namespace Webjobs.Extensions.Eventstore.Impl
                 .Subscribe(ProcessEvent, OnCompleted);
 
             _eventStoreSubscription.Connect();
+            _trace.Info("Observable subscription started.");
 
             _eventStoreSubscription.Start(cancellationToken, BatchSize);
+
 
             return Task.FromResult(true);
         }
@@ -50,9 +52,9 @@ namespace Webjobs.Extensions.Eventstore.Impl
         private IDisposable RestartSubscription()
         {
             _trace.Info("Restarting observable subscription.");
-           
-            return GetObservable().Catch(GetObservable())
-                .Subscribe(ProcessEvent);
+            _observable = GetObservable().Catch(GetObservable()).Subscribe(ProcessEvent);
+            _eventStoreSubscription.Connect();
+            return _observable;
         }
 
         private IObservable<IEnumerable<ResolvedEvent>> GetObservable()
@@ -64,23 +66,21 @@ namespace Webjobs.Extensions.Eventstore.Impl
         
         private void OnCompleted()
         {
-            _trace.Info("Subscription catch up complete calling handler");
-            //Send to delegate
-
             _observable = RestartSubscription();
         }
 
         public Task StopAsync(CancellationToken cancellationToken)
         {
+            _trace.Info("Stopping event listener.");
             _observable.Dispose();
             _eventStoreSubscription.Stop();
-           
+            _trace.Info("Event listener stopped.");
+
             return Task.FromResult(true);
         }
 
         private void ProcessEvent(IEnumerable<ResolvedEvent> events)
         {
-            _trace.Info($"Processing message triggered with {events.Count()} events");
             TriggeredFunctionData input = new TriggeredFunctionData
             {
                 TriggerValue = new EventStoreTriggerValue(events)
@@ -90,13 +90,31 @@ namespace Webjobs.Extensions.Eventstore.Impl
         
         public void Cancel()
         {
+            _trace.Info("Cancelling event listener.");
             _observable?.Dispose();
             _eventStoreSubscription?.Stop();
         }
 
+        private bool _isDisposed;
         public void Dispose()
         {
-            Cancel();
+            if (!_isDisposed)
+            {
+                _trace.Info("Disposing event listener.");
+                Dispose(true);
+            }
+            _isDisposed = true;
+            _trace.Info("Event listener disposed.");
+        }
+
+        private void Dispose(bool isDisposing)
+        {
+            if (isDisposing)
+            {
+                Cancel();
+                _eventStoreSubscription = null;
+            }
+            GC.SuppressFinalize(this);
         }
     }
 }

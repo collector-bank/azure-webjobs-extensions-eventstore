@@ -6,6 +6,7 @@ using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Threading;
+using System.Threading.Tasks;
 using EventStore.ClientAPI;
 using EventStore.ClientAPI.SystemData;
 using Microsoft.Azure.WebJobs.Host;
@@ -20,13 +21,12 @@ namespace Webjobs.Extensions.Eventstore.Impl
         private readonly TraceWriter _trace;
         private Position? _lastCheckpoint;
         private int _batchSize;
-        private readonly Stopwatch _catchupWatch = new Stopwatch();
         private EventBuffer _eventBuffer;
         private readonly int _maxLiveQueueMessage;
         private CancellationToken _cancellationToken;
         
-        private readonly Subject<ResolvedEvent> _subject;
-        private readonly IConnectableObservable<ResolvedEvent> _observable;
+        private Subject<ResolvedEvent> _subject;
+        private IConnectableObservable<ResolvedEvent> _observable;
         private bool _onCompletedFired;
         private bool _isStarted;
         
@@ -81,7 +81,6 @@ namespace Webjobs.Extensions.Eventstore.Impl
                 _userCredentials);
             
             _trace.Info($"Catch-up subscription started from checkpoint {startPosition} at {DateTime.Now}.");
-            _catchupWatch.Restart();
         }
         
         public void Stop()
@@ -101,14 +100,14 @@ namespace Webjobs.Extensions.Eventstore.Impl
             _isStarted = false;
         }
 
-        public IConnectableObservable<ResolvedEvent> Observable()
-        {
-            return _observable;
-        }
-
         public IDisposable Subscribe(IObserver<ResolvedEvent> observer)
         {
-            return _observable.Subscribe(observer);
+            if (_onCompletedFired)
+            {
+                _subject = new Subject<ResolvedEvent>();
+                _observable = _subject.Publish();
+            }
+            return _subject.Subscribe(observer);
         }
 
         public IDisposable Connect()
@@ -164,8 +163,8 @@ namespace Webjobs.Extensions.Eventstore.Impl
         {
             if (!_onCompletedFired)
             {
-                _subject.OnCompleted();
                 _onCompletedFired = true;
+               _subject.OnCompleted();
             }
         }
 
