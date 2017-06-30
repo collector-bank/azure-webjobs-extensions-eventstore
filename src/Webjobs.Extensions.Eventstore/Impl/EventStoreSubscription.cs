@@ -1,8 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Reactive;
 using System.Reactive.Disposables;
-using System.Runtime.InteropServices.ComTypes;
+using System.Reactive.Linq;
+using System.Reactive.Subjects;
+using System.Threading;
+using System.Threading.Tasks;
 using EventStore.ClientAPI;
 using EventStore.ClientAPI.SystemData;
 using Microsoft.Azure.WebJobs.Host;
@@ -17,12 +21,18 @@ namespace Webjobs.Extensions.Eventstore.Impl
         private readonly TraceWriter _trace;
         private Position? _lastCheckpoint;
         private int _batchSize;
-        private IObserver<ResolvedEvent> _observer;
-        private readonly Stopwatch _catchupWatch = new Stopwatch();
         private EventBuffer _eventBuffer;
-
+        private readonly int _maxLiveQueueMessage;
+        private CancellationToken _cancellationToken;
+        
+        private Subject<ResolvedEvent> _subject;
+        private IConnectableObservable<ResolvedEvent> _observable;
+        private bool _onCompletedFired;
+        private bool _isStarted;
+        
         public EventStoreCatchUpSubscriptionObservable(Lazy<IEventStoreConnection> connection,
             Position? lastCheckpoint,
+            int maxLiveQueueMessage,
             UserCredentials userCredentials,
             TraceWriter trace)
         {
@@ -30,24 +40,23 @@ namespace Webjobs.Extensions.Eventstore.Impl
             _userCredentials = userCredentials;
             _trace = trace;
             _connection = connection;
-        }
+            _maxLiveQueueMessage = maxLiveQueueMessage;
 
-        public IDisposable Subscribe(IObserver<ResolvedEvent> observer)
-        {
-            _observer = observer;
-            return Disposable.Create(() => { });
+            _subject = new Subject<ResolvedEvent>();
+            _observable = _subject.Publish();
         }
         
         private Position _lastAllPosition;
 
-        public void StartCatchUpSubscription(int batchSize)
+        public void Start(CancellationToken cancellationToken, int batchSize = 200)
         {
             _batchSize = batchSize;
-            StartCatchUpSubscription(_lastCheckpoint);
+            _cancellationToken = cancellationToken;
+            if(!_isStarted)
+                StartCatchUpSubscription(_lastCheckpoint);
         }
 
         private static readonly object LockObj = new object();
-        private bool _onCompletedFired = false;
         private void StartCatchUpSubscription(Position? startPosition)
         {
             lock (LockObj)
@@ -55,7 +64,8 @@ namespace Webjobs.Extensions.Eventstore.Impl
                 _eventBuffer = new EventBuffer(_batchSize + 28);
             }
             _onCompletedFired = false;
-            var settings = new CatchUpSubscriptionSettings(100000, _batchSize, true, false);
+            _isStarted = true;
+            var settings = new CatchUpSubscriptionSettings(_maxLiveQueueMessage, _batchSize, true, false);
             if (startPosition == null)
             {
                 var slice =
@@ -69,13 +79,11 @@ namespace Webjobs.Extensions.Eventstore.Impl
                 LiveProcessingStarted,
                 SubscriptionDropped,
                 _userCredentials);
-
+            
             _trace.Info($"Catch-up subscription started from checkpoint {startPosition} at {DateTime.Now}.");
-            _catchupWatch.Restart();
         }
-
-
-        public void StopSubscription()
+        
+        public void Stop()
         {
             if (_subscription == null) return;
             try
@@ -89,21 +97,43 @@ namespace Webjobs.Extensions.Eventstore.Impl
             {
                 _trace.Warning("The subscription did not stop within the specified time.");
             }
+            _isStarted = false;
         }
 
-        public void RestartSubscription()
+        public IDisposable Subscribe(IObserver<ResolvedEvent> observer)
+        {
+            if (_onCompletedFired)
+            {
+                _subject = new Subject<ResolvedEvent>();
+                _observable = _subject.Publish();
+            }
+            return _subject.Subscribe(observer);
+        }
+
+        public IDisposable Connect()
+        {
+            return _observable.Connect();
+        }
+
+        public void Restart()
         {
             _trace.Info("Restarting subscription...");
             var startPosition = _lastCheckpoint;
-            StopSubscription();
+            Stop();
             StartCatchUpSubscription(startPosition);
         }
 
         private void EventAppeared(EventStoreCatchUpSubscription sub, ResolvedEvent resolvedEvent)
         {
+            if (_cancellationToken != CancellationToken.None && _cancellationToken.IsCancellationRequested)
+            {
+                Trace.TraceInformation("Cancellation requested, stopping subscription...");
+                sub.Stop();
+                return;
+            }
             if (IsProcessable(resolvedEvent))
             {
-                _observer.OnNext(resolvedEvent);
+                _subject.OnNext(resolvedEvent);
                 var pos = resolvedEvent.OriginalPosition;
                 if (pos != null)
                 {
@@ -133,8 +163,8 @@ namespace Webjobs.Extensions.Eventstore.Impl
         {
             if (!_onCompletedFired)
             {
-                _observer.OnCompleted();
                 _onCompletedFired = true;
+               _subject.OnCompleted();
             }
         }
 
@@ -143,7 +173,7 @@ namespace Webjobs.Extensions.Eventstore.Impl
             var msg = (e?.Message + " " + (e?.InnerException?.Message ?? "")).TrimEnd();
             _trace.Warning($"Subscription dropped because {reason}: {msg}");
             if (reason == SubscriptionDropReason.ProcessingQueueOverflow)
-                RestartSubscription();
+                Restart();
         }
         
         private class EventBuffer

@@ -1,9 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using EventStore.ClientAPI;
 using Microsoft.Azure.WebJobs;
+using Webjobs.Extensions.Eventstore.Impl;
 
 namespace Webjobs.Extensions.Eventstore.Sample
 {
@@ -25,6 +27,12 @@ namespace Webjobs.Extensions.Eventstore.Sample
             {
                _eventPublisher.Publish(evt);
             }
+        }
+
+        [Disable(WebJobDisabledSetting)]
+        public void LiveProcessingStarted([LiveProcessingStarted] LiveProcessingStartedContext context)
+        {
+            Console.WriteLine("Live started triggered, event stream is now live");
         }
     }
 }

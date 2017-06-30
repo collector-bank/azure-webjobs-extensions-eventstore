@@ -84,7 +84,6 @@
   <ItemGroup>
     <Compile Include="Event.cs" />
     <Compile Include="EventPublisher.cs" />
-    <Compile Include="Handler.cs" />
     <Compile Include="IEventPublisher.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Functions.cs" />
