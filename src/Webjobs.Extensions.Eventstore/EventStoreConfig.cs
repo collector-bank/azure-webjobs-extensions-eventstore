@@ -58,7 +58,9 @@ namespace Webjobs.Extensions.Eventstore
         public int MaxLiveQueueSize { get; set; }
 
         private IEventStoreSubscription _eventStoreSubscription;
-        
+        private int _batchSize = 100;
+        private int _timeOutInMilliSeconds = 50;
+
         /// <summary>
         /// Method called when jobhost starts.
         /// </summary>
@@ -98,9 +100,7 @@ namespace Webjobs.Extensions.Eventstore
                 liveProcessingStartedBindingProvider);
         }
 
-        private int _batchSize = 100;
-        private int _timeOutInMilliSeconds = 50;
-        private Task<IListener> BuildListener(EventTriggerAttribute attribute,
+       private Task<IListener> BuildListener(EventTriggerAttribute attribute,
             ITriggeredFunctionExecutor executor, TraceWriter trace)
         {
             IListener listener;

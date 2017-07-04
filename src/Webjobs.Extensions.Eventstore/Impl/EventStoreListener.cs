@@ -21,8 +21,7 @@ namespace Webjobs.Extensions.Eventstore.Impl
 
         public int TimeOutInMilliSeconds { get; set; }
         public int BatchSize { get; set; }
-
-
+        
         public EventStoreListener(ITriggeredFunctionExecutor executor, 
                                   IEventStoreSubscription eventStoreSubscription,
                                   TraceWriter trace)
@@ -44,8 +43,6 @@ namespace Webjobs.Extensions.Eventstore.Impl
             _trace.Info("Observable subscription started.");
 
             _eventStoreSubscription.Start(cancellationToken, BatchSize);
-
-
             return Task.FromResult(true);
         }
 
