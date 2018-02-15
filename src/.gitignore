@@ -3,6 +3,7 @@ obj
 csx
 .vs/config/
 
+.DS_Store
 *.user
 *.suo
 *.cscfg
