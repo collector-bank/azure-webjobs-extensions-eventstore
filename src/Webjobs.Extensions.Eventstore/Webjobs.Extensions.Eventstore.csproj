@@ -10,9 +10,6 @@
     <PackageVersion>1.0.5</PackageVersion>
   </PropertyGroup>
   <ItemGroup>
-    <None Include="packages.config" />
-  </ItemGroup>
-  <ItemGroup>
     <Reference Include="EventStore.ClientAPI, Version=4.1.0.0, Culture=neutral, PublicKeyToken=null">
       <HintPath>..\..\packages\EventStore.Client.4.1.0\lib\net40\EventStore.ClientAPI.dll</HintPath>
     </Reference>

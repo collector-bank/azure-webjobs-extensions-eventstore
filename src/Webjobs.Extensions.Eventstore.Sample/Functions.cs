@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using EventStore.ClientAPI;
+using Microsoft.Azure.WebJobs;
 using Webjobs.Extensions.Eventstore.Impl;
 
 namespace Webjobs.Extensions.Eventstore.Sample

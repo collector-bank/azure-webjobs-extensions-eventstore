@@ -6,9 +6,8 @@ using System.Threading.Tasks;
 using EventStore.ClientAPI;
 using EventStore.ClientAPI.SystemData;
 using Microsoft.Azure.WebJobs.Host;
-using Webjobs.Extensions.Eventstore;
 
-namespace Webjobs.Extensions.NetCore.Eventstore.Impl
+namespace Webjobs.Extensions.Eventstore
 {
     public abstract class EventStoreStreamSubscriptionObservableBase : IEventStoreSubscription
     {

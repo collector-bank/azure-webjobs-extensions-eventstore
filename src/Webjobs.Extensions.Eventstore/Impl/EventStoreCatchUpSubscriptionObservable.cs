@@ -2,7 +2,6 @@ using System;
 using EventStore.ClientAPI;
 using EventStore.ClientAPI.SystemData;
 using Microsoft.Azure.WebJobs.Host;
-using Webjobs.Extensions.NetCore.Eventstore.Impl;
 
 namespace Webjobs.Extensions.Eventstore.Impl
 {

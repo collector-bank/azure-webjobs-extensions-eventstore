@@ -14,4 +14,19 @@
   <ItemGroup>
     <ProjectReference Include="..\Webjobs.Extensions.Eventstore\Webjobs.Extensions.Eventstore.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="EventStore.Client" Version="4.1.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
+    <PackageReference Include="SimpleInjector" Version="4.0.12" />
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="4.4.1" />
+    <PackageReference Include="SimpleInjector.Extensions.LifetimeScoping" Version="4.0.0" />
+    <PackageReference Include="Microsoft.Azure.WebJobs" Version="2.1.0" />
+    <PackageReference Include="System.Reactive" Version="3.1.1" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Remove="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove=".DS_Store" />
+  </ItemGroup>
 </Project>

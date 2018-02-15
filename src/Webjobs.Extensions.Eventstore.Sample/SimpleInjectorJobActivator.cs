@@ -1,4 +1,7 @@
-﻿namespace Webjobs.Extensions.Eventstore.Sample
+﻿using Microsoft.Azure.WebJobs.Host;
+using SimpleInjector;
+
+namespace Webjobs.Extensions.Eventstore.Sample
 {
     public class SimpleInjectorJobActivator : IJobActivator
     {
