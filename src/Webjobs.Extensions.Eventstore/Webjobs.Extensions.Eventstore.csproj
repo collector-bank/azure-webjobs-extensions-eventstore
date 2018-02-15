@@ -8,6 +8,12 @@
     <Company>Collectorbank AB</Company>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageVersion>1.0.5</PackageVersion>
+    <PackOnBuild>true</PackOnBuild>
+    <PackageLicenseUrl>https://github.com/collector-bank/azure-webjobs-extensions-eventstore/blob/master/LICENSE.md</PackageLicenseUrl>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <Owners>$author$</Owners>
+    <PackageProjectUrl>https://github.com/collector-bank/azure-webjobs-extensions-eventstore</PackageProjectUrl>
+    <Title>$title$</Title>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="EventStore.ClientAPI, Version=4.1.0.0, Culture=neutral, PublicKeyToken=null">
