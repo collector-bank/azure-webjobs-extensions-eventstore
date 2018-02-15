@@ -1,11 +1,6 @@
 ﻿using System;
 using System.Net;
-using System.Reactive.Linq;
 using System.Text;
-using EventStore.ClientAPI;
-using EventStore.ClientAPI.SystemData;
-using Newtonsoft.Json;
-using Webjobs.Extensions.Eventstore.Sample;
 
 namespace EventsEmiter
 {

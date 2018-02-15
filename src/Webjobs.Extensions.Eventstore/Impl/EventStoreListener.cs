@@ -1,13 +1,13 @@
-using EventStore.ClientAPI;
-using Microsoft.Azure.WebJobs.Host;
-using Microsoft.Azure.WebJobs.Host.Executors;
-using Microsoft.Azure.WebJobs.Host.Listeners;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using EventStore.ClientAPI;
+using Microsoft.Azure.WebJobs.Host;
+using Microsoft.Azure.WebJobs.Host.Executors;
+using Microsoft.Azure.WebJobs.Host.Listeners;
 
 namespace Webjobs.Extensions.Eventstore.Impl
 {
@@ -15,31 +15,38 @@ namespace Webjobs.Extensions.Eventstore.Impl
     {
         private readonly ITriggeredFunctionExecutor _executor;
         private IEventStoreSubscription _eventStoreSubscription;
+        private readonly IEventFilter _eventFilter;
+        private readonly IObserver<IEnumerable<ResolvedEvent>> _observer;
         private readonly TraceWriter _trace;
         private CancellationToken _cancellationToken = CancellationToken.None;
         private IDisposable _observable;
 
-        public int TimeOutInMilliSeconds { get; set; }
-        public int BatchSize { get; set; }
+        public int TimeOutInMilliSeconds { get; }
+        public int BatchSize { get; }
         
         public EventStoreListener(ITriggeredFunctionExecutor executor, 
                                   IEventStoreSubscription eventStoreSubscription,
+                                  IEventFilter eventFilter,
+                                  IObserver<IEnumerable<ResolvedEvent>> observer,
+                                  int batchSize,
+                                  int timeOutInMilliSeconds,
                                   TraceWriter trace)
         {
+            BatchSize = batchSize;
+            TimeOutInMilliSeconds = timeOutInMilliSeconds;
             _executor = executor;
             _eventStoreSubscription = eventStoreSubscription;
-            _trace = trace;
+            _eventFilter = eventFilter;
+            _observer = observer;
+           _trace = trace;
         }
         
         public Task StartAsync(CancellationToken cancellationToken)
         {
             _cancellationToken = cancellationToken;
-            _observable = _eventStoreSubscription
-                .Buffer(TimeSpan.FromMilliseconds(TimeOutInMilliSeconds), BatchSize)
-                .Where(buffer => buffer.Any())
+            _observable = GetObservable()
                 .Subscribe(ProcessEvent, OnCompleted);
-
-            _eventStoreSubscription.Connect();
+            
             _trace.Info("Observable subscription started.");
 
             _eventStoreSubscription.Start(cancellationToken, BatchSize);
@@ -50,13 +57,16 @@ namespace Webjobs.Extensions.Eventstore.Impl
         {
             _trace.Info("Restarting observable subscription.");
             _observable = GetObservable().Catch(GetObservable()).Subscribe(ProcessEvent);
-            _eventStoreSubscription.Connect();
             return _observable;
         }
 
         private IObservable<IEnumerable<ResolvedEvent>> GetObservable()
         {
-            return _eventStoreSubscription
+            var observable = (IObservable<ResolvedEvent>) _eventStoreSubscription;
+            if (_eventFilter != null)
+                observable = _eventFilter.Filter(observable);
+            
+            return observable
                 .Buffer(TimeSpan.FromMilliseconds(TimeOutInMilliSeconds), BatchSize)
                 .Where(buffer => buffer.Any());
         }
@@ -64,6 +74,7 @@ namespace Webjobs.Extensions.Eventstore.Impl
         private void OnCompleted()
         {
             _observable = RestartSubscription();
+            _observer.OnCompleted();
         }
 
         public Task StopAsync(CancellationToken cancellationToken)

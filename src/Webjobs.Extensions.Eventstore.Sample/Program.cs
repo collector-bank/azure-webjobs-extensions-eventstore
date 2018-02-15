@@ -1,16 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Configuration;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using EventStore.ClientAPI;
-using Microsoft.Azure;
-using Microsoft.Azure.WebJobs;
-using SimpleInjector;
-using SimpleInjector.Extensions.LifetimeScoping;
-
-namespace Webjobs.Extensions.Eventstore.Sample
+﻿namespace Webjobs.Extensions.Eventstore.Sample
 {
     class Program
     {
