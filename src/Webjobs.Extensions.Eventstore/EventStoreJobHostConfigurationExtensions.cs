@@ -14,7 +14,7 @@ namespace Webjobs.Extensions.Eventstore
         public static void UseEventStore(this JobHostConfiguration config, EventStoreConfig eventStoreConfig = null)
         {
             if (config == null)
-                throw new ArgumentNullException("config");
+                throw new ArgumentNullException(nameof(config));
             if (eventStoreConfig == null)
                 eventStoreConfig = new EventStoreConfig();
 

@@ -1,11 +1,9 @@
 ﻿using System;
-using System.Threading.Tasks;
+using System.Collections.Generic;
+using System.Reactive.Subjects;
 using EventStore.ClientAPI;
 using Microsoft.Azure.WebJobs;
-using Microsoft.Azure.WebJobs.Host;
 using Microsoft.Azure.WebJobs.Host.Config;
-using Microsoft.Azure.WebJobs.Host.Executors;
-using Microsoft.Azure.WebJobs.Host.Listeners;
 using Webjobs.Extensions.Eventstore.Impl;
 
 namespace Webjobs.Extensions.Eventstore
@@ -16,6 +14,8 @@ namespace Webjobs.Extensions.Eventstore
     /// </summary>
     public class EventStoreConfig : IExtensionConfigProvider
     {
+        private IEventStoreSubscription _eventStoreSubscription;
+
         /// <summary>
         /// Factory that creates a connection object to event store.
         /// </summary>
@@ -31,11 +31,6 @@ namespace Webjobs.Extensions.Eventstore
         /// the beginning.
         /// </summary>
         public Position? LastPosition { get; set; }
-
-        /// <summary>
-        /// Factory used to create an event store listener.
-        /// </summary>
-        public IListenerFactory EventStoreListenerFactory { get; set; }
         
         /// <summary>
         /// The username used in UserCredentialFactory to gain access to event store.
@@ -46,7 +41,7 @@ namespace Webjobs.Extensions.Eventstore
         /// The password used in UserCredentialFactory to gain access to event store.
         /// </summary>
         public string Password { get; set; }
-
+        
         /// <summary>
         /// The connection string to the event store cluster.
         /// </summary>
@@ -57,10 +52,22 @@ namespace Webjobs.Extensions.Eventstore
         /// </summary>
         public int MaxLiveQueueSize { get; set; }
 
-        private IEventStoreSubscription _eventStoreSubscription;
-        private int _batchSize = 100;
-        private int _timeOutInMilliSeconds = 50;
+        /// <summary>
+        /// Gets the active event store subscription;
+        /// </summary>
+        public IEventStoreSubscription EventStoreSubscription
+        {
+            get => _eventStoreSubscription;
+            set => _eventStoreSubscription = value;
+        }
 
+        /// <summary>
+        /// Gets or set the pre event filtering, which filters event from reaching the trigger.
+        /// </summary>
+        public IEventFilter EventFilter { get; set; }
+        
+        public IEventStoreSubscriptionFactory EventStoreSubscriptionFactory { get; set; }
+       
         /// <summary>
         /// Method called when jobhost starts.
         /// </summary>
@@ -69,7 +76,7 @@ namespace Webjobs.Extensions.Eventstore
         {
             if (context == null)
             {
-                throw new ArgumentNullException("context");
+                throw new ArgumentNullException(nameof(context));
             }
 
             if (EventStoreConnectionFactory == null)
@@ -80,18 +87,17 @@ namespace Webjobs.Extensions.Eventstore
 
             if (MaxLiveQueueSize == 0)
                 MaxLiveQueueSize = 200;
+                
+            if(EventStoreSubscriptionFactory == null)
+                EventStoreConnectionFactory = new EventStoreConnectionFactory();
+            
+            if(EventStoreSubscriptionFactory == null)
+                EventStoreSubscriptionFactory = new EventStoreSubscriptionFactory();
 
-            _eventStoreSubscription = new EventStoreCatchUpSubscriptionObservable(EventStoreConnectionFactory.Create(ConnectionString), 
-                LastPosition,
-                MaxLiveQueueSize,
-                UserCredentialFactory.CreateAdminCredentials(Username, Password), 
-                context.Trace);
-
-            var triggerBindingProvider = new EventTriggerAttributeBindingProvider<EventTriggerAttribute>(
-                BuildListener, context.Config, context.Trace);
-
-            var liveProcessingStartedBindingProvider = new LiveProcessingStartedAttributeBindingProvider(
-                BuildListener, context.Trace);
+            var subject = new Subject<IEnumerable<ResolvedEvent>>();
+            var triggerBindingProvider = new EventTriggerAttributeBindingProvider(context.Config.NameResolver, this, subject, context.Trace);
+            
+            var liveProcessingStartedBindingProvider = new LiveProcessingStartedAttributeBindingProvider(subject, context.Trace);
 
             // Register our extension binding providers
             context.Config.RegisterBindingExtensions(
@@ -99,36 +105,5 @@ namespace Webjobs.Extensions.Eventstore
             context.Config.RegisterBindingExtensions(
                 liveProcessingStartedBindingProvider);
         }
-
-       private Task<IListener> BuildListener(EventTriggerAttribute attribute,
-            ITriggeredFunctionExecutor executor, TraceWriter trace)
-        {
-            IListener listener;
-            if (EventStoreListenerFactory == null)
-            {
-                listener = new EventStoreListener(executor, _eventStoreSubscription, trace)
-                {
-                    BatchSize = _batchSize = attribute.BatchSize,
-                    TimeOutInMilliSeconds = _timeOutInMilliSeconds = attribute.TimeOutInMilliSeconds
-                };
-            }
-            else
-            {
-                listener = EventStoreListenerFactory.Create();
-            }
-            return Task.FromResult<IListener>(listener);
-        }
-
-        private Task<IListener> BuildListener(ITriggeredFunctionExecutor executor, TraceWriter trace)
-        {
-            IListener listener = new LiveProcessingStartedListener(executor, 
-                _eventStoreSubscription,
-                _batchSize,
-                _timeOutInMilliSeconds,
-                trace);
-            return Task.FromResult<IListener>(listener);
-        }
-
-
     }
-}
+ }

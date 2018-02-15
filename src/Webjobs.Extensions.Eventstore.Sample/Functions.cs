@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 using EventStore.ClientAPI;
 using Microsoft.Azure.WebJobs;
 using Webjobs.Extensions.Eventstore.Impl;

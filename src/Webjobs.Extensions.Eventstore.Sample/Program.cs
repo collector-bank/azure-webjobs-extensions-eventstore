@@ -1,14 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Configuration;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Configuration;
 using EventStore.ClientAPI;
-using Microsoft.Azure;
 using Microsoft.Azure.WebJobs;
 using SimpleInjector;
-using SimpleInjector.Extensions.LifetimeScoping;
+using SimpleInjector.Lifestyles;
 
 namespace Webjobs.Extensions.Eventstore.Sample
 {
@@ -24,10 +18,10 @@ namespace Webjobs.Extensions.Eventstore.Sample
             }
 
             var container = new Container();
-            container.Options.DefaultScopedLifestyle = new LifetimeScopeLifestyle();
+            container.Options.DefaultScopedLifestyle = new ThreadScopedLifestyle();
             InitíalizeContainer(container);
 
-            using (container.BeginLifetimeScope())
+            using (ThreadScopedLifestyle.BeginScope(container))
             {
                 config.UseEventStore(new EventStoreConfig
                 {
