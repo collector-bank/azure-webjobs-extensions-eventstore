@@ -1,7 +1,7 @@
 # Azure Webjobs Eventstore extension
 
-![Build status](https://ci.appveyor.com/api/projects/status/aa7t5nfxpiri1e85/branch/release?svg=true)](https://ci.appveyor.com/project/aspnet-contrib/aspnet-security-oauth-extensions/branch/release)
-[![Build status](https://travis-ci.org/aspnet-contrib/AspNet.Security.OAuth.Extensions.svg?branch=release)](https://travis-ci.org/aspnet-contrib/AspNet.Security.OAuth.Extensions)
+[![Build Status](https://travis-ci.org/{ORG-or-USERNAME}/{REPO-NAME}.png?branch=master)](https://travis-ci.org/{ORG-or-USERNAME}/{REPO-NAME})
+[![Build Status](https://travis-ci.org/{ORG-or-USERNAME}/{REPO-NAME}.png?branch=develop)](https://travis-ci.org/{ORG-or-USERNAME}/{REPO-NAME})
 
 Azure webjob event store trigger used to handle subscription stream.
 
