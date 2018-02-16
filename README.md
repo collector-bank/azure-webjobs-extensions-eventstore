@@ -6,7 +6,7 @@ This repo contains binding extension for the Eventstore (https://github.com/Even
 
 When creating the Jobhost use the following extension method to bind the triggers.
 
-```c#
+```csharp
 config.UseEventStore(new EventStoreConfig
         {
             ConnectionString = "ConnectTo=tcp://localhost:1113;HeartbeatTimeout=20000",
@@ -17,7 +17,7 @@ config.UseEventStore(new EventStoreConfig
         });
 ```
 
-```c#        
+```csharp        
 [Singleton(Mode = SingletonMode.Listener)]
 public void ProcessQueueMessage([EventTrigger(BatchSize = 10, TimeOutInMilliSeconds = 20)] IEnumerable<ResolvedEvent> events)
 {
