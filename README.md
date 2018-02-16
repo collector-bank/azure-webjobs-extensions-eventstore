@@ -17,7 +17,7 @@ config.UseEventStore(new EventStoreConfig
         });
 ```
 
-In the eventstore configuration has options to override most factories used during the startup of the jobhost. The event store subscription is an observable stream which can be filter with reaction extensions before it reaches the trigger.
+In the eventstore configuration has options to override most factories used during the startup of the jobhost. The event store subscription is an observable stream which can be prefiltered with reactive extensions.
 
 ```csharp
 config.UseEventStore(new EventStoreConfig
@@ -42,7 +42,7 @@ public class MyEventFilter : IEventFilter
 }
 ```
 
-The event trigger can subscribe to all stream or an specific stream by name. When the subscription reaches the current position the LiveProcessingStarted trigger is fired. The trigger fires when the batch buffer has filled up or the timeout has occured. 
+The event trigger can subscribe to all stream or an specific stream by name. When the subscription reaches the current position the LiveProcessingStarted trigger is fired. The trigger fires when the batch buffer has filled up or the timeout has elapsed. 
 
 ```csharp        
 [Singleton(Mode = SingletonMode.Listener)]
