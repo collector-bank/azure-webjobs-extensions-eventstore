@@ -1,9 +1,6 @@
 # Azure Webjobs Eventstore extension
 
-[![Build Status](https://travis-ci.org/{ORG-or-USERNAME}/{REPO-NAME}.png?branch=master)](https://travis-ci.org/{ORG-or-USERNAME}/{REPO-NAME})
-[![Build Status](https://travis-ci.org/{ORG-or-USERNAME}/{REPO-NAME}.png?branch=develop)](https://travis-ci.org/{ORG-or-USERNAME}/{REPO-NAME})
-
-Azure webjob event store trigger used to handle subscription stream.
+This repo contains binding extension for the Eventstore (https://github.com/EventStore/EventStore).
 
 ## Getting Started
 
