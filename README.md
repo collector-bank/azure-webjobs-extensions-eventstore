@@ -17,6 +17,33 @@ config.UseEventStore(new EventStoreConfig
         });
 ```
 
+In the eventstore configuration has options to override most factories used during the startup of the jobhost. The event store subscription is an observable stream which can be filter with reaction extensions before it reaches the trigger.
+
+```csharp
+config.UseEventStore(new EventStoreConfig
+        {
+            ConnectionString = "ConnectTo=tcp://localhost:1113;HeartbeatTimeout=20000",
+            Username = "admin",
+            Password = "changeit",
+            LastPosition = new Position(0,0),
+            EventFilter = new MyEventFilter()
+            MaxLiveQueueSize = 500
+        });
+
+public class MyEventFilter : IEventFilter
+{   
+    /// <summary>
+    /// Filter $stat stream and deleted events.
+    /// </summary>                
+    public IObservable<ResolvedEvent> Filter(IObservable<ResolvedEvent> eventStreamObservable)
+    {
+        return eventStreamObservable.Where(e => !e.OriginalStreamId.StartsWith("$") && e.Event.EventType != "$streamDeleted");
+    }
+}
+```
+
+The event trigger can subscribe to all stream or an specific stream by name. When the subscription reaches the current position the LiveProcessingStarted trigger is fired. The trigger fires when the batch buffer has filled up or the timeout has occured. 
+
 ```csharp        
 [Singleton(Mode = SingletonMode.Listener)]
 public void ProcessQueueMessage([EventTrigger(BatchSize = 10, TimeOutInMilliSeconds = 20)] IEnumerable<ResolvedEvent> events)
@@ -43,6 +70,4 @@ This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md
 
 ## Acknowledgments
 
-* Hat tip to anyone who's code was used
-* Inspiration
-* etc
+* Collector bank and the savings team.
