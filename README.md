@@ -1,9 +1,6 @@
-# azure-webjobs-extensions-eventstore
-Azure webjob event store trigger used to handle subscription stream.
-
 # Azure Webjobs Eventstore extension
 
-One Paragraph of project description goes here
+Azure webjob event store trigger used to handle subscription stream.
 
 ## Getting Started
 
