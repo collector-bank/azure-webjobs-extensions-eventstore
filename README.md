@@ -8,27 +8,27 @@ When creating the Jobhost use the following extension method to bind the trigger
 
 ```c#
 config.UseEventStore(new EventStoreConfig
-                {
-                    ConnectionString = "ConnectTo=tcp://localhost:1113;HeartbeatTimeout=20000",
-                    Username = "admin",
-                    Password = "changeit",
-                    LastPosition = new Position(0,0),
-                    MaxLiveQueueSize = 500
-                });
+        {
+            ConnectionString = "ConnectTo=tcp://localhost:1113;HeartbeatTimeout=20000",
+            Username = "admin",
+            Password = "changeit",
+            LastPosition = new Position(0,0),
+            MaxLiveQueueSize = 500
+        });
 ```
 
 ```c#        
-        [Singleton(Mode = SingletonMode.Listener)]
-        public void ProcessQueueMessage([EventTrigger(BatchSize = 10, TimeOutInMilliSeconds = 20)] IEnumerable<ResolvedEvent> events)
-        {
-            //Handle the delivered events
-        }
+[Singleton(Mode = SingletonMode.Listener)]
+public void ProcessQueueMessage([EventTrigger(BatchSize = 10, TimeOutInMilliSeconds = 20)] IEnumerable<ResolvedEvent> events)
+{
+    //Handle the delivered events
+}
 
-        [Disable(WebJobDisabledSetting)]
-        public void LiveProcessingStarted([LiveProcessingStarted] LiveProcessingStartedContext context)
-        {
-            //Handle the swap from catchup to live mode
-        }
+[Disable(WebJobDisabledSetting)]
+public void LiveProcessingStarted([LiveProcessingStarted] LiveProcessingStartedContext context)
+{
+    //Handle the swap from catchup to live mode
+}
 ```
 
 ## Authors
