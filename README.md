@@ -8,27 +8,24 @@ When creating the Jobhost use the following extension method to bind the trigger
 
 ```csharp
 config.UseEventStore(new EventStoreConfig
-        {
-            ConnectionString = "ConnectTo=tcp://localhost:1113;HeartbeatTimeout=20000",
-            Username = "admin",
-            Password = "changeit",
-            LastPosition = new Position(0,0),
-            MaxLiveQueueSize = 500
-        });
+{
+    ConnectionString = "ConnectTo=tcp://localhost:1113;HeartbeatTimeout=20000",
+    Username = "admin",
+    Password = "changeit",
+    LastPosition = new Position(0,0),
+    MaxLiveQueueSize = 500
+});
 ```
 
 In the eventstore configuration has options to override most factories used during the startup of the jobhost. The event store subscription is an observable stream which can be prefiltered with reactive extensions.
 
 ```csharp
 config.UseEventStore(new EventStoreConfig
-        {
-            ConnectionString = "ConnectTo=tcp://localhost:1113;HeartbeatTimeout=20000",
-            Username = "admin",
-            Password = "changeit",
-            LastPosition = new Position(0,0),
-            EventFilter = new MyEventFilter()
-            MaxLiveQueueSize = 500
-        });
+{
+    ...
+    EventFilter = new MyEventFilter()
+    ...
+});
 
 public class MyEventFilter : IEventFilter
 {   
